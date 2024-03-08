@@ -102,6 +102,7 @@ class GameState:
         self.grid[self.pacbot.pos[0]][self.pacbot.pos[1]] = e
         self.score += pellet_score
         self.pellets -= 1
+        self.ate_pellet = True
 
     # Sets the current position of Pacman to empty and increments the score.
     # Also makes all ghosts frightened.
@@ -110,6 +111,7 @@ class GameState:
         self.score += power_pellet_score
         self.power_pellets -= 1
         self._become_frightened()
+        self.ate_power_pellet = True
 
     # Returns true if the position of Pacman is occupied by a cherry.
     def _is_eating_cherry(self):
@@ -120,6 +122,7 @@ class GameState:
         self.grid[self.pacbot.pos[0]][self.pacbot.pos[1]] = e
         self.score += cherry_score
         self.cherry = False
+        self.ate_cherry = True
 
     # Returns true if the cherry should be spawned; this happens
     # when only 170 pellets remain.
@@ -194,6 +197,7 @@ class GameState:
             self.pause()
             self._update_score()
             self.grid[cherry_pos[0]][cherry_pos[1]] = e
+            self.lost_life = True
         else:
             self._end_game()
             self.dead = True
@@ -234,6 +238,7 @@ class GameState:
             ghost.send_home()
             self.score += ghost_score * self.frightened_multiplier
             self.frightened_multiplier += 1
+            self.ate_ghost = True
 
     # Returns true if there are no more pellets left on the board.
     def _are_all_pellets_eaten(self):
@@ -270,14 +275,21 @@ class GameState:
         print(ret)
 
     def next_step(self):
+        self.lost_life = False
+        self.ate_pellet = False
+        self.ate_power_pellet = False
+        self.ate_cherry = False
+        self.ate_ghost = False
         if self._is_game_over():
             self._end_game()
-        if self._should_die():
+        elif self._should_die():
             self._die()
         else:
             self._check_if_ghosts_eaten()
             if self.update_ticks % ticks_per_update == 0:
                 self._update_ghosts()
+                if self._should_die():
+                    self._die()
                 self._check_if_ghosts_eaten()
                 if self.state == frightened:
                     if self.frightened_counter == 1:
@@ -302,7 +314,8 @@ class GameState:
     # Sets the game back to its original state (no rounds played).
     def restart(self):
         self.grid = copy.deepcopy(grid)
-        self.pellets = sum([col.count(o) for col in self.grid])
+        self.total_pellets = sum([col.count(o) for col in self.grid])
+        self.pellets = self.total_pellets
         self.power_pellets = sum([col.count(O) for col in self.grid])
         self.cherry = False
         self.prev_cherry_pellets = 0
@@ -329,10 +342,18 @@ class GameState:
         grid = np.array(self.grid)
 
         grid[self.pacbot.pos] = 10
-        grid[self.red.pos["current"]] = 10 + red + (4 if self.red.is_frightened() else 0)
-        grid[self.pink.pos["current"]] = 10 + pink + (4 if self.pink.is_frightened() else 0)
-        grid[self.orange.pos["current"]] = 10 + orange + (4 if self.orange.is_frightened() else 0)
-        grid[self.blue.pos["current"]] = 10 + blue + (4 if self.blue.is_frightened() else 0)
+        grid[self.red.pos["current"]] = (
+            10 + red + (4 if self.red.is_frightened() else 0)
+        )
+        grid[self.pink.pos["current"]] = (
+            10 + pink + (4 if self.pink.is_frightened() else 0)
+        )
+        grid[self.orange.pos["current"]] = (
+            10 + orange + (4 if self.orange.is_frightened() else 0)
+        )
+        grid[self.blue.pos["current"]] = (
+            10 + blue + (4 if self.blue.is_frightened() else 0)
+        )
 
         return grid
 
