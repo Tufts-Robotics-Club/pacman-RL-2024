@@ -3,3 +3,5 @@ logs
 **/__pycache__/*
 **/*.pyc
 **/*.pyo
+*.egg-info
+pyvenv.cfg

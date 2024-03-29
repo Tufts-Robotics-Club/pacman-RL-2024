@@ -372,3 +372,30 @@ class GameState:
         )
 
         return ret
+
+    def rgb_array(self):
+        COLORS = [
+            [],
+            [255, 255, 255],  # wall
+            [0, 255, 0],  # normal pellet
+            [0, 0, 0],  # empty space
+            [0, 255, 255],  # power pellet
+            [63, 63, 63],  # ghost chamber
+            [192, 127, 0],  # cherry
+            [],
+            [],
+            [],
+            [255, 255, 0],  # pacman
+            [255, 0, 0],  # red ghost
+            [255, 0, 255],  # pink ghost
+            [255, 127, 0],  # orange ghost
+            [0, 0, 255],  # blue ghost
+            [255, 63, 127],  # frightened red ghost
+            [255, 127, 255],  # frightened pink ghost
+            [255, 127, 63],  # frightened orange ghost
+            [53, 127, 255],  # frightened blue ghost
+        ]
+
+        grid = self.get_populated_grid()
+
+        return [[COLORS[cell] for cell in row] for row in grid]
