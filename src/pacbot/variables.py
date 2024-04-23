@@ -41,5 +41,5 @@ state_swap_times = [35, 135, 170, 270, 295, 395, 420]
 pacbot_starting_pos = (14, 7)
 pacbot_starting_dir = left
 cherry_pos = (13, 13)
-game_frequency = 2.
+game_frequency = 2.0
 ticks_per_update = 1

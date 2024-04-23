@@ -1,3 +1,4 @@
+import numpy as np
 from .variables import *
 from .grid import grid
 
@@ -14,9 +15,13 @@ class PacBot:
     def respawn(self):
         self.last_pos = None
         self.pos = pacbot_starting_pos
+        self.last_direction = pacbot_starting_dir
         self.direction = pacbot_starting_dir
-        self.stuck = False
+        self.stuck = 0
         self.reversed = False
+        self.changed = False
+        self.new_pos = False
+        self.visited = np.zeros((len(grid), len(grid[0])))
 
     def update(self, position):
         if position[0] > self.pos[0]:
@@ -43,6 +48,8 @@ class PacBot:
         if self._game_state.update_ticks % ticks_per_update != 0:
             return
 
+        last_direction = self.direction
+
         self.direction = direction
         if direction == right:
             next_pos = (self.pos[0] + 1, self.pos[1])
@@ -55,10 +62,17 @@ class PacBot:
         else:
             raise ValueError("invalid direction")
 
+        self.changed = last_direction != self.direction
+
         if self.is_valid_position(next_pos):
             self.reversed = next_pos == self.last_pos
             self.last_pos = self.pos
             self.pos = next_pos
-            self.stuck = False
+            self.stuck = 0
+            if self.visited[self.pos[0]][self.pos[1]] == 0:
+                self.new_pos = True
+            else:
+                self.new_pos = False
+            self.visited[self.pos[0]][self.pos[1]] += 1
         else:
-            self.stuck = True
+            self.stuck += 1

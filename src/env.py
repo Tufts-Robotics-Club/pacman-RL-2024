@@ -5,6 +5,12 @@ import numpy as np
 from .pacbot import grid, GameState
 from .pacbot.variables import *
 
+MAX_DISTANCE = 64
+
+
+def normalize(x):
+    return 0 if x < 0 else (1 if x > 1 else x)
+
 
 class PacbotEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"]}
@@ -13,9 +19,8 @@ class PacbotEnv(gym.Env):
     def __init__(self, game_state=GameState()):
         super(PacbotEnv, self).__init__()
         self._game_state = game_state
-        self.observation_space = spaces.Box(
-            1, 18, shape=(len(grid) * len(grid[0]),), dtype=int
-        )
+        self.observation_space = spaces.Box(0, 1, shape=(18,), dtype=np.float64)
+        self.step_count = 1e6
 
         self.action_space = spaces.Discrete(4)
 
@@ -62,15 +67,25 @@ class PacbotEnv(gym.Env):
             )
         )
 
-    def _find_closest(self, position, predicate):
+    def _closest_intersection_predicate(self, x, y):
+        return (
+            (self._game_state.grid[x - 1][y] != I)
+            + (self._game_state.grid[x + 1][y] != I)
+            + (self._game_state.grid[x][y - 1] != I)
+            + (self._game_state.grid[x][y + 1] != I)
+        ) > 2
+
+    def _find_closest(self, position, predicate, default=MAX_DISTANCE):
         if not self._game_state.pacbot.is_valid_position(position):
-            return None
+            return default
 
         queue = [position]
-        visited = np.array([0] * len(grid) * len(grid[0]))
+        visited = np.array([-1] * len(grid) * len(grid[0]))
 
         def linear_index(x, y):
             return y * len(grid) + x
+
+        visited[linear_index(position[0], position[1])] = 0
 
         while queue:
             x, y = queue.pop(0)
@@ -80,16 +95,127 @@ class PacbotEnv(gym.Env):
                 new_x, new_y = x + dx, y + dy
                 if (
                     self._game_state.pacbot.is_valid_position((new_x, new_y))
-                    and visited[linear_index(new_x, new_y)] == 0
+                    and visited[linear_index(new_x, new_y)] == -1
                 ):
                     queue.append((new_x, new_y))
                     visited[linear_index(new_x, new_y)] = (
                         visited[linear_index(x, y)] + 1
                     )
-        return None
+        return default
 
     def _get_observation(self):
-        return self._game_state.get_populated_grid().flatten()
+        level_progress = 1 - (self._game_state.pellets / self._game_state.total_pellets)
+
+        power_pellet_duration = self._game_state.frightened_counter / frightened_length
+
+        pos = self._game_state.pacbot.pos
+        pos_left = (pos[0] - 1, pos[1])
+        pos_right = (pos[0] + 1, pos[1])
+        pos_up = (pos[0], pos[1] + 1)
+        pos_down = (pos[0], pos[1] - 1)
+
+        closest_pellet_left_distance = (
+            self._find_closest(pos_left, self._closest_pellet_predicate) / MAX_DISTANCE
+        )
+        closest_pellet_right_distance = (
+            self._find_closest(pos_right, self._closest_pellet_predicate) / MAX_DISTANCE
+        )
+        closest_pellet_up_distance = (
+            self._find_closest(pos_up, self._closest_pellet_predicate) / MAX_DISTANCE
+        )
+        closest_pellet_down_distance = (
+            self._find_closest(pos_down, self._closest_pellet_predicate) / MAX_DISTANCE
+        )
+
+        closest_angry_ghost_left_distance = (
+            self._find_closest(pos_left, self._closest_angry_ghost_predicate, default=0)
+            / MAX_DISTANCE
+        )
+        closest_angry_ghost_right_distance = (
+            self._find_closest(
+                pos_right, self._closest_angry_ghost_predicate, default=0
+            )
+            / MAX_DISTANCE
+        )
+        closest_angry_ghost_up_distance = (
+            self._find_closest(pos_up, self._closest_angry_ghost_predicate, default=0)
+            / MAX_DISTANCE
+        )
+        closest_angry_ghost_down_distance = (
+            self._find_closest(pos_down, self._closest_angry_ghost_predicate, default=0)
+            / MAX_DISTANCE
+        )
+
+        closest_frightened_ghost_left_distance = (
+            self._find_closest(pos_left, self._closest_frightened_ghost_predicate)
+            / MAX_DISTANCE
+        )
+        closest_frightened_ghost_right_distance = (
+            self._find_closest(pos_right, self._closest_frightened_ghost_predicate)
+            / MAX_DISTANCE
+        )
+        closest_frightened_ghost_up_distance = (
+            self._find_closest(pos_up, self._closest_frightened_ghost_predicate)
+            / MAX_DISTANCE
+        )
+        closest_frightened_ghost_down_distance = (
+            self._find_closest(pos_down, self._closest_frightened_ghost_predicate)
+            / MAX_DISTANCE
+        )
+
+        closest_intersection_left_distance = (
+            self._find_closest(pos_left, self._closest_intersection_predicate)
+            / MAX_DISTANCE
+        )
+        closest_intersection_right_distance = (
+            self._find_closest(pos_right, self._closest_intersection_predicate)
+            / MAX_DISTANCE
+        )
+        closest_intersection_up_distance = (
+            self._find_closest(pos_up, self._closest_intersection_predicate)
+            / MAX_DISTANCE
+        )
+        closest_intersection_down_distance = (
+            self._find_closest(pos_down, self._closest_intersection_predicate)
+            / MAX_DISTANCE
+        )
+
+        is_direction_left = 1 if self._game_state.pacbot.direction == left else 0
+        is_direction_right = 1 if self._game_state.pacbot.direction == right else 0
+        is_direction_up = 1 if self._game_state.pacbot.direction == up else 0
+        is_direction_down = 1 if self._game_state.pacbot.direction == down else 0
+
+        return np.array(
+            list(
+                map(
+                    normalize,
+                    [
+                        level_progress,
+                        power_pellet_duration,
+                        closest_pellet_left_distance,
+                        closest_pellet_right_distance,
+                        closest_pellet_up_distance,
+                        closest_pellet_down_distance,
+                        closest_angry_ghost_left_distance
+                        - closest_intersection_left_distance,
+                        closest_angry_ghost_right_distance
+                        - closest_intersection_right_distance,
+                        closest_angry_ghost_up_distance
+                        - closest_intersection_up_distance,
+                        closest_angry_ghost_down_distance
+                        - closest_intersection_down_distance,
+                        closest_frightened_ghost_left_distance,
+                        closest_frightened_ghost_right_distance,
+                        closest_frightened_ghost_up_distance,
+                        closest_frightened_ghost_down_distance,
+                        is_direction_left,
+                        is_direction_right,
+                        is_direction_up,
+                        is_direction_down,
+                    ],
+                )
+            )
+        )
 
     def _get_info(self):
         return {
@@ -107,47 +233,62 @@ class PacbotEnv(gym.Env):
             self._game_state.pacbot.pos, self._closest_pellet_predicate
         )
 
-        closest_angry_ghost_distance = self._find_closest(
-            self._game_state.pacbot.pos, self._closest_angry_ghost_predicate
+        closest_angry_ghost_distance = (
+            self._find_closest(
+                self._game_state.pacbot.pos, self._closest_angry_ghost_predicate
+            )
+            if self._game_state.ghosts_enabled
+            else 0
         )
 
-        closest_frightened_ghost_distance = self._find_closest(
-            self._game_state.pacbot.pos, self._closest_frightened_ghost_predicate
+        closest_frightened_ghost_distance = (
+            self._find_closest(
+                self._game_state.pacbot.pos, self._closest_frightened_ghost_predicate
+            )
+            if self._game_state.ghosts_enabled
+            else 0
         )
 
         reward_components = {
-            "exist": -5,
+            # "exist": -0.5,
             "win": 50 * self._game_state._is_game_over(),
-            "lost_life": -250 * self._game_state.lost_life,
-            "ate_ghost": 40 * self._game_state.ate_ghost,
-            "ate_pellet": 25 * self._game_state.ate_pellet,
+            "lost_life": -50 * self._game_state.lost_life,
+            "ate_ghost": 25 * self._game_state.ate_ghost,
+            "ate_pellet": 15 * self._game_state.ate_pellet,
             "ate_power_pellet": 10 * self._game_state.ate_power_pellet,
-            "ate_cherry": 200 * self._game_state.ate_cherry,
-            "stuck": -5 * self._game_state.pacbot.stuck,
-            "reversed": -5 * self._game_state.pacbot.reversed,
-            "dead": -500 * self._game_state.dead,
-            "closest_pellet_distance": (
-                -min(closest_pellet_distance, 10)
-                if not closest_pellet_distance in [None, 0]
-                else 0
-            ),
-            "closest_angry_ghost_distance": (
-                min(closest_angry_ghost_distance, 10)
-                if not closest_angry_ghost_distance in [None, 0]
-                else 0
-            ),
-            "closest_frightened_ghost_distance": (
-                -min(closest_frightened_ghost_distance, 10)
-                if not closest_frightened_ghost_distance in [None, 0]
-                else 0
-            ),
+            "ate_cherry": 50 * self._game_state.ate_cherry,
+            "exploration": 1 * self._game_state.pacbot.new_pos,
+            # "changed": -5 * self._game_state.pacbot.changed,
+            # "reversed": -2 * self._game_state.pacbot.reversed,
+            "dead": -25 * self._game_state.dead,
+            "inaction": -0.1 * (self._game_state.pacbot.stuck > 5),
+            # "closest_pellet_distance": (
+            #     -min(closest_pellet_distance, 5)
+            #     if not closest_pellet_distance in [None, 0]
+            #     else 0
+            # )
+            # / 10,
+            # "closest_angry_ghost_distance": (
+            #     min(closest_angry_ghost_distance, 5)
+            #     if not closest_angry_ghost_distance in [None, 0]
+            #     else 0
+            # )
+            # / 10,
+            # "closest_frightened_ghost_distance": (
+            #     -min(closest_frightened_ghost_distance, 5)
+            #     if not closest_frightened_ghost_distance in [None, 0]
+            #     else 0
+            # )
+            # / 10,
         }
 
-        reward = float(sum(reward_components.values()))
+        reward = sum(reward_components.values())
 
         return reward, reward_components
 
     def step(self, action):
+        self.step_count += 1
+
         self._game_state.pacbot.update_from_direction(action)
         self._game_state.next_step()
 
@@ -166,6 +307,7 @@ class PacbotEnv(gym.Env):
         super().reset(seed=seed)
         self._game_state.restart()
         self._game_state.unpause()
+        self._game_state.lives = 3
         self._last_score = self._game_state.score
         self._last_lives = self._game_state.lives
         self._episode_rewards = 0

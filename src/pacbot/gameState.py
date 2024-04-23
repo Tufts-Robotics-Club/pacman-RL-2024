@@ -13,6 +13,7 @@ FREQUENCY = game_frequency * ticks_per_update
 
 class GameState:
     def __init__(self):
+        self.ghosts_enabled = True
         self.pacbot = PacBot(self)
         self.red = GhostAgent(
             red_init_pos[0],
@@ -84,6 +85,8 @@ class GameState:
     # Decreases the remaining time each ghost should be frightened for and updates each ghost's
     # current and next move information.
     def _update_ghosts(self):
+        if not self.ghosts_enabled:
+            return
         self.red.update()
         self.orange.update()
         self.pink.update()
@@ -204,6 +207,8 @@ class GameState:
 
     # Returns true if Pacman has collided with a ghost and the ghost is not frightened.
     def _should_die(self):
+        if not self.ghosts_enabled:
+            return False
         return (
             (
                 self.red.pos["current"] == self.pacbot.pos
@@ -226,6 +231,8 @@ class GameState:
     # Checks for ghosts that have been eaten and sends them back
     # to the respawn zone if they have been eaten.
     def _check_if_ghosts_eaten(self):
+        if not self.ghosts_enabled:
+            return
         self._check_if_ghost_eaten(self.red)
         self._check_if_ghost_eaten(self.pink)
         self._check_if_ghost_eaten(self.orange)
@@ -234,6 +241,8 @@ class GameState:
     # If the ghost was eaten, then the ghost is sent home, the score is updated, and
     # the score multiplier for Pacman in frightened mode is increased.
     def _check_if_ghost_eaten(self, ghost):
+        if not self.ghosts_enabled:
+            return
         if ghost.pos["current"] == self.pacbot.pos and ghost.frightened_counter > 0:
             ghost.send_home()
             self.score += ghost_score * self.frightened_multiplier
@@ -342,18 +351,19 @@ class GameState:
         grid = np.array(self.grid)
 
         grid[self.pacbot.pos] = 10
-        grid[self.red.pos["current"]] = (
-            10 + red + (4 if self.red.is_frightened() else 0)
-        )
-        grid[self.pink.pos["current"]] = (
-            10 + pink + (4 if self.pink.is_frightened() else 0)
-        )
-        grid[self.orange.pos["current"]] = (
-            10 + orange + (4 if self.orange.is_frightened() else 0)
-        )
-        grid[self.blue.pos["current"]] = (
-            10 + blue + (4 if self.blue.is_frightened() else 0)
-        )
+        if self.ghosts_enabled:
+            grid[self.red.pos["current"]] = (
+                10 + red + (4 if self.red.is_frightened() else 0)
+            )
+            grid[self.pink.pos["current"]] = (
+                10 + pink + (4 if self.pink.is_frightened() else 0)
+            )
+            grid[self.orange.pos["current"]] = (
+                10 + orange + (4 if self.orange.is_frightened() else 0)
+            )
+            grid[self.blue.pos["current"]] = (
+                10 + blue + (4 if self.blue.is_frightened() else 0)
+            )
 
         return grid
 
@@ -380,7 +390,7 @@ class GameState:
             [0, 255, 0],  # normal pellet
             [0, 0, 0],  # empty space
             [0, 255, 255],  # power pellet
-            [63, 63, 63],  # ghost chamber
+            [0, 63, 27],  # ghost chamber
             [192, 127, 0],  # cherry
             [],
             [],

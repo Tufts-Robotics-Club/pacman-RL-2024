@@ -4,12 +4,13 @@ from src.env import PacbotEnv
 from stable_baselines3.common.env_checker import check_env
 import cv2
 import numpy as np
+from src.pacbot.variables import right, left, up, down
 
-env = PacbotEnv()
+pac_env = PacbotEnv()
 
-check_env(env)
+check_env(pac_env)
 
-env = DummyVecEnv([lambda: env])
+env = DummyVecEnv([lambda: pac_env])
 env = VecFrameStack(env, n_stack=4)
 
 
@@ -20,10 +21,27 @@ ACTIONS = ["RIGHT", "LEFT", "UP", "DOWN"]
 
 done = True
 reward = None
+total_reward = 0
+
+in_action = right
 
 while True:
     if done:
         state = env.reset()
+        total_reward = 0
+
+    # key = cv2.waitKey(2000)
+    # if key == ord("w"):
+    #     in_action = down
+    # elif key == ord("s"):
+    #     in_action = up
+    # elif key == ord("a"):
+    #     in_action = left
+    # elif key == ord("d"):
+    #     in_action = right
+
+    # action = np.array([[in_action]])
+
     action = model.predict(state)
     state, reward, done, info = env.step(action)
     grid = np.array(info[0]["grid"], dtype=np.uint8)
@@ -44,7 +62,11 @@ while True:
     )
 
     cv2.imshow("grid", resized_image)
+    # print(state)
+    total_reward += reward[0]
     print("reward", reward[0])
-    print(info[0]["reward_components"])
-    if cv2.waitKey(100) & 0xFF == ord("q"):
+    print("total reward", total_reward)
+    # print(info[0]["reward_components"])
+    print(state[0][6:10])
+    if cv2.waitKey(50) & 0xFF == ord("q"):
         break

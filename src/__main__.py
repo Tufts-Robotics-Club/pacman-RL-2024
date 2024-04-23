@@ -17,13 +17,19 @@ check_env(PacbotEnv())
 
 def make_env():
     env = PacbotEnv()
-    env = TimeLimit(env, max_episode_steps=50000)
-    env = Monitor(env, info_keywords=("score",))
+    env = TimeLimit(env, max_episode_steps=1000)
+    env = Monitor(
+        env,
+        info_keywords=(
+            "is_success",
+            "score",
+        ),
+    )
 
     return env
 
 
-num_envs = 12
+num_envs = 8
 env = SubprocVecEnv([make_env for _ in range(num_envs)])
 env = VecFrameStack(env, n_stack=4)
 
@@ -39,19 +45,6 @@ class RecordScoreCallback(BaseCallback):
         scores = [info["score"] for info in self.locals["infos"]]
 
         self.logger.record("eval/score", np.mean(scores))
-
-        reward_components = [info["reward_components"] for info in self.locals["infos"]]
-
-        for key in reward_components[0].keys():
-            component = np.mean(
-                [reward_component[key] for reward_component in reward_components]
-            )
-
-            self.logger.record(f"reward/{key}", component)
-
-            grid = self.locals["infos"][0]["grid"]
-            image = Image(np.array(grid), "WHC")
-            self.logger.record("eval/grid", image, exclude=("stdout", "log"))
 
         return True
 
@@ -80,18 +73,11 @@ model = PPO(
     env,
     verbose=1,
     tensorboard_log=LOG_DIR,
-    learning_rate=linear_schedule(3e-4),
-    n_steps=128,
-    n_epochs=4,
-    batch_size=256,
-    gamma=0.95,
-    clip_range=linear_schedule(0.1),
-    ent_coef=0.25,
-    vf_coef=0.5,
+    learning_rate=linear_schedule(3e-3),
 )
 
 model.learn(
-    total_timesteps=1e8,
+    total_timesteps=1e9,
     callback=[checkpoint_callback, eval_callback, score_callback],
 )
 

@@ -35,3 +35,4 @@ grid = [[I,I,I,I,I,I,I,I,I,I,I,I,e,e,e,e,e,e,e,e,e,I,I,I,I,I,I,I,I,I,I], # 0
         [I,I,I,I,I,I,I,I,I,I,I,I,e,e,e,e,e,e,e,e,e,I,I,I,I,I,I,I,I,I,I]]
 #        |         |         |         |         |         |         |   top right of pacman board
 #        0         5        10        15       20         25       30
+

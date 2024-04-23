@@ -5,3 +5,4 @@ logs
 **/*.pyo
 *.egg-info
 pyvenv.cfg
+.venv
