@@ -4,14 +4,14 @@ from src.env import PacbotEnv
 from stable_baselines3.common.env_checker import check_env
 import cv2
 import numpy as np
-from src.pacbot.variables import right, left, up, down
+
+# from src.pacbot.variables import right, left, up, down
 
 pac_env = PacbotEnv()
 
 check_env(pac_env)
 
 env = DummyVecEnv([lambda: pac_env])
-env = VecFrameStack(env, n_stack=4)
 
 
 model = PPO.load("./checkpoints/best_model")
@@ -23,7 +23,7 @@ done = True
 reward = None
 total_reward = 0
 
-in_action = right
+# in_action = right
 
 while True:
     if done:
@@ -31,9 +31,9 @@ while True:
         total_reward = 0
 
     # key = cv2.waitKey(2000)
-    # if key == ord("w"):
+    # if key == ord("s"):
     #     in_action = down
-    # elif key == ord("s"):
+    # elif key == ord("w"):
     #     in_action = up
     # elif key == ord("a"):
     #     in_action = left
@@ -45,6 +45,10 @@ while True:
     action = model.predict(state)
     state, reward, done, info = env.step(action)
     grid = np.array(info[0]["grid"], dtype=np.uint8)
+    grid = np.flip(grid, axis=1)
+    grid[27][0] = (255, 0, 0)
+    grid[27][30] = (0, 255, 0)
+    grid[0][30] = (0, 0, 255)
     grid = np.transpose(grid, (1, 0, 2))
     grid = cv2.cvtColor(grid, cv2.COLOR_RGB2BGR)
     resized_image = cv2.resize(
@@ -62,11 +66,9 @@ while True:
     )
 
     cv2.imshow("grid", resized_image)
-    # print(state)
     total_reward += reward[0]
-    print("reward", reward[0])
-    print("total reward", total_reward)
+    # print("reward", reward[0])
+    # print("total reward", total_reward)
     # print(info[0]["reward_components"])
-    print(state[0][6:10])
     if cv2.waitKey(50) & 0xFF == ord("q"):
         break

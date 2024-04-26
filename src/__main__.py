@@ -9,7 +9,6 @@ from stable_baselines3.common.vec_env import VecFrameStack, SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.env_checker import check_env
 import numpy as np
-from stable_baselines3.common.logger import Image
 from .env import PacbotEnv
 
 check_env(PacbotEnv())
@@ -29,9 +28,9 @@ def make_env():
     return env
 
 
-num_envs = 8
+num_envs = 32
 env = SubprocVecEnv([make_env for _ in range(num_envs)])
-env = VecFrameStack(env, n_stack=4)
+# env = VecFrameStack(env, n_stack=4)
 
 LOG_DIR = "./logs/"
 CHECKPOINT_DIR = "./checkpoints/"
@@ -73,11 +72,12 @@ model = PPO(
     env,
     verbose=1,
     tensorboard_log=LOG_DIR,
-    learning_rate=linear_schedule(3e-3),
+    learning_rate=linear_schedule(3e-4),
+    ent_coef=0.05,
 )
 
 model.learn(
-    total_timesteps=1e9,
+    total_timesteps=1e8,
     callback=[checkpoint_callback, eval_callback, score_callback],
 )
 
