@@ -1,3 +1,6 @@
 stable-baselines3[extra]==2.2.1
 gymnasium==0.29.1
 numpy==1.26.4
+opencv-python==4.9.0.80
+# PyTorch with CUDA - install separately using:
+# pip install torch --index-url https://download.pytorch.org/whl/cu121

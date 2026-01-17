@@ -43,7 +43,7 @@ class GameState:
             orange_init_npos[0],
             orange_init_npos[1],
             orange,
-            red_init_dir,
+            orange_init_dir,
             self,
             orange_start_path,
             orange_scatter_pos,

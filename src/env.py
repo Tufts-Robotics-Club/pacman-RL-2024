@@ -271,25 +271,25 @@ class PacbotEnv(gym.Env):
 
         closest_angry_ghost_left_distance = (
             self._find_closest(
-                pos_left, self._closest_angry_ghost_predicate, origin=pos, default=0
+                pos_left, self._closest_angry_ghost_predicate, origin=pos
             )
             / MAX_DISTANCE
         )
         closest_angry_ghost_right_distance = (
             self._find_closest(
-                pos_right, self._closest_angry_ghost_predicate, origin=pos, default=0
+                pos_right, self._closest_angry_ghost_predicate, origin=pos
             )
             / MAX_DISTANCE
         )
         closest_angry_ghost_up_distance = (
             self._find_closest(
-                pos_up, self._closest_angry_ghost_predicate, origin=pos, default=0
+                pos_up, self._closest_angry_ghost_predicate, origin=pos
             )
             / MAX_DISTANCE
         )
         closest_angry_ghost_down_distance = (
             self._find_closest(
-                pos_down, self._closest_angry_ghost_predicate, origin=pos, default=0
+                pos_down, self._closest_angry_ghost_predicate, origin=pos
             )
             / MAX_DISTANCE
         )
