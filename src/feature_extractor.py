@@ -211,13 +211,13 @@ class FeatureExtractor:
         """
         Extract features from the game state into a 22 length to be passed into
         the ML algo. The vector indicies are as follows:
-        -0: level_progress | ratio of pellets eaten so far (1-remaining/total)
-        -1: power_pellet_duration | time remaining on power pellet (frightened_counter / frightened_length)
-        -2-5: Pellet Proximity | BFS shortest-path distance to the nearest pellet if Pac-Man steps in that direction. If a region has no pellets left, it falls back to the distance to the opposite corner of the board.
-        -6-9: Threat/Intersection Margin | (angry_ghost_dist - intersection_dist) in each direction. Measures whether an angry ghost is closing in before Pac-Man can escape through a junction.
-        -10-13: Edible Ghost Proximity | BFS distance to the nearest frightened ghost in each direction (incentivizes hunting blue ghosts).
-        -14-17: Entrapment/Escape Space | Relative number of safe tiles reachable before ghosts intercept Pac-Man. Uses a simultaneous flood-fill to detect if a direction leads into a dead-end trap.
-        -18-21: Current Direction: One-hot encoded vector representing the direction Pac-Man is currently heading.
+        - 0: `level_progress` | ratio of pellets eaten so far (1-remaining/total)
+        - 1: `power_pellet_duration` | time remaining on power pellet (frightened_counter / frightened_length)
+        - 2-5: `Pellet Proximity` | BFS shortest-path distance to the nearest pellet if Pac-Man steps in that direction. If a region has no pellets left, it falls back to the distance to the opposite corner of the board.
+        - 6-9: `Threat/Intersection Margin` | (angry_ghost_dist - intersection_dist) in each direction. Measures whether an angry ghost is closing in before Pac-Man can escape through a junction.
+        - 10-13: `Edible Ghost Proximity` | BFS distance to the nearest frightened ghost in each direction (incentivizes hunting blue ghosts).
+        - 14-17: `Entrapment/Escape Space` | Relative number of safe tiles reachable before ghosts intercept Pac-Man. Uses a simultaneous flood-fill to detect if a direction leads into a dead-end trap.
+        - 18-21: `Current Direction` | One-hot encoded vector representing the direction Pac-Man is currently heading.
         """
         self._game_state = game_state
 
