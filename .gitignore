@@ -6,3 +6,4 @@ logs
 *.egg-info
 pyvenv.cfg
 .venv
+.DS_Store
